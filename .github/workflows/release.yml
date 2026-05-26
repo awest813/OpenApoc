@@ -1,0 +1,126 @@
+name: Release (macOS)
+
+# Triggered when a version tag is pushed (e.g. v0.1.0, v1.2.3-alpha).
+# Builds native arm64 and x86_64 app bundles, packages them as .zip archives,
+# and attaches them to a GitHub Release so users can download and run without
+# compiling.
+#
+# Which artifact should I download?
+#   OpenApoc-macOS-apple-silicon.zip  →  M1 / M2 / M3 / M4 Macs (arm64)
+#   OpenApoc-macOS-intel.zip          →  Intel Macs (x86_64)
+#
+# After downloading, unzip, right-click → Open (to bypass Gatekeeper on first
+# launch), then copy data/cd.iso into the same folder as OpenApoc.app.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  # -----------------------------------------------------------------------
+  # Build one app bundle per architecture
+  # -----------------------------------------------------------------------
+  build:
+    name: Build (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: "Apple Silicon (arm64)"
+            os: macos-15
+            preset: macos-arm64
+            artifact_suffix: apple-silicon
+          - name: "Intel (x86_64)"
+            os: macos-13
+            preset: macos-x86_64
+            artifact_suffix: intel
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: brew install cmake boost sdl2 libvorbis ninja
+
+      - name: Configure (${{ matrix.preset }})
+        run: cmake --preset ${{ matrix.preset }} -S ${{ github.workspace }}
+
+      - name: Build (${{ matrix.preset }})
+        run: cmake --build --preset ${{ matrix.preset }} --parallel
+
+      - name: Smoke test — startup probe
+        run: |
+          EXEC="${{ github.workspace }}/build/${{ matrix.preset }}/bin/OpenApoc.app/Contents/MacOS/OpenApoc"
+          test -x "$EXEC"
+          set +e
+          "$EXEC" --help > /tmp/probe.txt 2>&1
+          CODE=$?
+          set -e
+          cat /tmp/probe.txt
+          if [ "$CODE" -ne 0 ] && [ "$CODE" -ne 1 ]; then
+            echo "Startup probe failed (exit $CODE)"
+            exit 1
+          fi
+
+      # Package the app bundle as a zip.
+      # `ditto` preserves macOS resource forks and extended attributes.
+      - name: Package app bundle
+        run: |
+          cd "${{ github.workspace }}/build/${{ matrix.preset }}/bin"
+          ditto -c -k --keepParent OpenApoc.app \
+            "${{ github.workspace }}/OpenApoc-macOS-${{ matrix.artifact_suffix }}.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenApoc-macOS-${{ matrix.artifact_suffix }}
+          path: ${{ github.workspace }}/OpenApoc-macOS-${{ matrix.artifact_suffix }}.zip
+          if-no-files-found: error
+
+  # -----------------------------------------------------------------------
+  # Create the GitHub Release and attach both zip archives
+  # -----------------------------------------------------------------------
+  release:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ github.ref_name }}"
+          gh release create "$TAG" \
+            --title "OpenApoc $TAG" \
+            --notes "## macOS Downloads
+
+          | File | For |
+          |---|---|
+          | \`OpenApoc-macOS-apple-silicon.zip\` | **Apple Silicon** Macs — M1, M2, M3, M4 |
+          | \`OpenApoc-macOS-intel.zip\` | **Intel** Macs |
+
+          ### First-time setup
+          1. Download the zip for your Mac.
+          2. Unzip and move \`OpenApoc.app\` anywhere you like.
+          3. **Right-click → Open** the first time (Gatekeeper will warn about an unsigned app — click *Open* to proceed).
+          4. Copy your X-Com: Apocalypse \`cd.iso\` (Steam or GOG) into the same folder as \`OpenApoc.app\`.
+          5. Double-click \`OpenApoc.app\` to play.
+
+          > **Game data required.** OpenApoc does not include game assets. You must own a copy of X-COM: Apocalypse (Steam or GOG).
+
+          See [SUPPORT.md](https://github.com/${{ github.repository }}/blob/master/SUPPORT.md) for the full platform support matrix and known limitations." \
+            release-assets/*.zip

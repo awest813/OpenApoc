@@ -200,14 +200,36 @@ make -j4
 >
 > See [SUPPORT.md](SUPPORT.md) for the full support matrix.
 
-#### Quickstart (one setup command, one run command)
+#### macOS compatibility at a glance
 
-This is the recommended path for both Apple Silicon and Intel Macs.
+| Architecture | macOS versions tested | Support level |
+|---|---|---|
+| Apple Silicon (arm64) | 14 Sonoma, 15 Sequoia | **Primary** — CI-tested on every push |
+| Intel (x86\_64) | 13 Ventura | **Secondary** — CI-tested, best-effort |
+
+#### Pre-built downloads (no compilation required)
+
+Tagged releases include ready-to-run app bundles. Download the one for your Mac from the [Releases page](https://github.com/awest813/OpenApoc/releases):
+
+| File | For |
+|---|---|
+| `OpenApoc-macOS-apple-silicon.zip` | Apple Silicon Macs (M1 / M2 / M3 / M4) |
+| `OpenApoc-macOS-intel.zip` | Intel Macs |
+
+After downloading, unzip, **right-click → Open** to bypass Gatekeeper on first launch, then place your `cd.iso` in the same folder as `OpenApoc.app`. See the [Gatekeeper note](#troubleshooting-1) if the app is blocked.
+
+> CI artifacts (every push) are also available on the [Actions tab](https://github.com/awest813/OpenApoc/actions/workflows/macos.yml) — click a green run → scroll to **Artifacts**.
+
+---
+
+#### Quickstart — build from source (one setup command, one run command)
+
+This is the recommended path for both Apple Silicon and Intel Macs when building from source.
 
 **1. Clone and enter the repository**
 
 ```sh
-git clone https://github.com/OpenApoc/OpenApoc.git
+git clone https://github.com/awest813/OpenApoc.git
 cd OpenApoc
 ```
 
@@ -304,13 +326,101 @@ build/macos-arm64/bin/OpenApoc.app/Contents/MacOS/OpenApoc
 
 #### Troubleshooting
 
-| Symptom | Fix |
-|---|---|
-| `brew: command not found` | Install Homebrew from https://brew.sh. On Apple Silicon the prefix is `/opt/homebrew`; on Intel it is `/usr/local`. |
-| `cmake: No CMAKE_CXX_COMPILER` | Run `xcode-select --install` to install the Xcode Command Line Tools, then retry. |
-| Configure prints "EXTRACT_DATA automatically disabled" | Normal — place `cd.iso` in `data/` and re-run `cmake --preset …` to enable data extraction. |
-| `OpenGL is deprecated on macOS` warnings at runtime | Expected; the engine uses `GL_ARB_ES3_compatibility` via Apple's compatibility path. Metal/MoltenVK support is a future goal. |
-| App refuses to open ("damaged" / Gatekeeper) | Right-click → Open, or run `xattr -dr com.apple.quarantine build/…/OpenApoc.app`. Signed/notarized releases are a future milestone. |
+Work through the steps below in order — most problems are solved at step 1 or 2.
+
+**Step 1 — Xcode Command Line Tools not installed**
+
+```
+cmake: No CMAKE_CXX_COMPILER
+```
+
+Fix:
+```sh
+xcode-select --install   # follow the GUI prompt, then re-run macos-setup.sh
+```
+
+---
+
+**Step 2 — Homebrew not found**
+
+```
+[setup] ERROR: Homebrew required.
+```
+
+Fix:
+```sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+# then re-run macos-setup.sh
+```
+
+> Apple Silicon: Homebrew installs to `/opt/homebrew`.  Intel: `/usr/local`.
+
+---
+
+**Step 3 — Build configures but data extraction is skipped**
+
+```
+EXTRACT_DATA automatically disabled
+```
+
+This is **not an error**. Place your game data file and re-configure:
+```sh
+cp /path/to/cd.iso data/
+cmake --preset macos-arm64   # or macos-x86_64
+```
+
+---
+
+**Step 4 — App refuses to open ("damaged" or unidentified developer)**
+
+macOS Gatekeeper blocks unsigned apps. Fix:
+```sh
+# Option A — right-click the app → Open → click Open in the dialog
+# Option B — strip the quarantine attribute from the terminal:
+xattr -dr com.apple.quarantine build/macos-arm64/bin/OpenApoc.app
+```
+
+Signed/notarized releases are a future milestone. See [SUPPORT.md](SUPPORT.md#gatekeeper--code-signing) for full details.
+
+---
+
+**Step 5 — OpenGL deprecation warnings at runtime**
+
+```
+OpenGL is deprecated on macOS
+```
+
+Expected — the engine uses `GL_ARB_ES3_compatibility` via Apple's compatibility path. The game runs correctly despite the warnings. Metal/MoltenVK support is a long-term goal.
+
+---
+
+**Step 6 — Wrong architecture binary**
+
+If you're on Apple Silicon but running an Intel binary (or vice versa), re-run the setup script with the correct arch flag:
+
+```sh
+bash tools/macos-setup.sh arm64    # M1 / M2 / M3 / M4 (Apple Silicon)
+bash tools/macos-setup.sh x86_64   # Intel
+```
+
+---
+
+#### Get help fast
+
+If none of the above resolves your issue, please reach out **before** filing a bug — many issues are environment-specific and are resolved quickly in chat.
+
+1. **Join Discord:** <https://discord.gg/f8Rayre> — most active support channel.
+2. **Post your details** — copy-paste the following and share it in `#mac-support` (or `#general` if there is no mac channel):
+   ```sh
+   uname -m                          # architecture
+   sw_vers                           # macOS version
+   xcode-select -p                   # compiler toolchain path
+   brew --version                    # Homebrew version
+   cmake --version                   # CMake version
+   otool -L build/macos-arm64/bin/OpenApoc.app/Contents/MacOS/OpenApoc 2>/dev/null || \
+   otool -L build/macos-x86_64/bin/OpenApoc.app/Contents/MacOS/OpenApoc
+   ```
+3. **File a bug** if the issue is reproducible and not environment-specific: <https://github.com/awest813/OpenApoc/issues> — include the output from step 2.
 
 
 ## OpenApoc Coding Style

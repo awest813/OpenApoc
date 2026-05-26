@@ -38,10 +38,17 @@ set(CD_PATH ${CMAKE_SOURCE_DIR}/data/cd.iso CACHE STRING "Path to cd.iso (used
 by test and extractor")
 
 if (${EXTRACT_DATA} AND NOT EXISTS ${CD_PATH})
-		message(FATAL_ERROR "CD_PATH \"${CD_PATH}\" points at non-existant file")
+		message(WARNING
+			"CD_PATH \"${CD_PATH}\" does not exist — EXTRACT_DATA automatically disabled.\n"
+			"Copy your cd.iso (or cd.iso directory) to data/ and re-run CMake to enable data extraction.")
+		set(EXTRACT_DATA OFF CACHE BOOL "Run the data extractor as part of the default target" FORCE)
 endif()
 
-message("Using CD at \"${CD_PATH}\"")
+if (EXISTS ${CD_PATH})
+		message("Using CD at \"${CD_PATH}\"")
+else()
+		message(STATUS "No cd.iso found at \"${CD_PATH}\" — build will succeed but data extraction is disabled.")
+endif()
 
 set(CMAKE_C_FLAGS_SANITIZE "-Og -g -fsanitize=address -fno-omit-frame-pointer")
 set(CMAKE_CXX_FLAGS_SANITIZE "-Og -g -fsanitize=address -fno-omit-frame-pointer")

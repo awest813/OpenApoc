@@ -196,72 +196,121 @@ make -j4
 
 ### Building on macOS
 
-(Tested on macOS Sequoia 15.6 (24G84)
+> **Supported:** Apple Silicon (arm64, macOS 14+) — **primary**. Intel (x86\_64, macOS 13) — best-effort.
+>
+> See [SUPPORT.md](SUPPORT.md) for the full support matrix.
 
-* On macOS, install the [Homebrew](https://brew.sh):
+#### Quickstart (one setup command, one run command)
 
-```sh
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-```
+This is the recommended path for both Apple Silicon and Intel Macs.
 
-* Checkout OpenApoc from GitHub:
+**1. Clone and enter the repository**
 
 ```sh
 git clone https://github.com/OpenApoc/OpenApoc.git
+cd OpenApoc
 ```
 
-* Fetch the dependencies from git with the following terminal command (run from the just-created OpenApoc folder):
+**2. Run the setup script** — installs dependencies, configures, and builds automatically:
 
 ```sh
-cd /path/to/OpenApoc
-git submodule update --init --recursive
+bash tools/macos-setup.sh
 ```
 
-* Use the homebrew install the following dependencies:
+The script auto-detects your Mac's architecture. You can also force a target:
 
 ```sh
-brew install cmake boost pkg-config sdl2 qt@6 libvorbis
+bash tools/macos-setup.sh arm64    # Apple Silicon
+bash tools/macos-setup.sh x86_64   # Intel
 ```
 
-* Add the Qt install to path.
+**3. Add your game data** (required to play):
 
-* If using zsh (MacOS default since Catalina 10.15):
-```sh
-echo 'export PATH="/opt/homebrew/opt/qt@6/bin:$PATH"' >> ~/.zprofile
-```
-* Or if using bash:
-```sh
-echo 'export PATH="/opt/homebrew/opt/qt@6/bin:$PATH"' >> ~/.bashrc
-```
-
-* Copy the cd.iso file to the 'data' directory under the repository root (Note - despite dosbox having good linux support, the steam version of X-Com Apocalypse will only install if Steam Play is enabled).
+Copy the X-Com: Apocalypse disc image to the `data/` folder. The Steam version
+includes a `cd.iso` file; the GOG version uses `.cue`/`.bin` files.
 
 ```sh
 cp /path/to/cd.iso data/
 ```
 
-* Create a subdirectory ('build' in this example) in the OpenApoc checkout directory, and from that use cmake to configure OpenApoc.
+> **Note:** You can build and configure before placing `cd.iso` — data
+> extraction is automatically skipped until the file is present.
+
+**4. Run the game:**
+
+```sh
+bash tools/macos-run.sh
+```
+
+---
+
+#### Manual build (advanced)
+
+If you prefer to drive CMake yourself, the repository ships
+[CMakePresets.json](CMakePresets.json) with ready-made configurations.
+
+**Prerequisites — install with [Homebrew](https://brew.sh):**
+
+| Homebrew prefix | Architecture |
+|---|---|
+| `/opt/homebrew` | Apple Silicon |
+| `/usr/local` | Intel |
+
+```sh
+# Install Homebrew if not already present
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Core dependencies (Qt is optional — only needed for the launcher)
+brew install cmake ninja boost sdl2 libvorbis pkg-config
+
+# Optional: launcher UI
+brew install qt@6
+```
+
+**Fetch submodules:**
+
+```sh
+git submodule update --init --recursive
+```
+
+**Configure and build using a preset:**
+
+```sh
+# Apple Silicon
+cmake --preset macos-arm64
+cmake --build --preset macos-arm64
+
+# Intel
+cmake --preset macos-x86_64
+cmake --build --preset macos-x86_64
+
+# Universal binary (arm64 + x86_64) — for distribution
+cmake --preset macos-universal
+cmake --build --preset macos-universal
+```
+
+The app bundle is created at `build/<preset>/bin/OpenApoc.app`.
+
+**Run from the repository root** (so data paths resolve correctly):
 
 ```sh
 cd /path/to/OpenApoc
-mkdir build
-cd build
-cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
+open build/macos-arm64/bin/OpenApoc.app
+# or
+build/macos-arm64/bin/OpenApoc.app/Contents/MacOS/OpenApoc
 ```
 
-* This cmake command will fail if we're missing a dependency, or your system is for some other reason unable to build - if you have any issues please contact us (see above for links).
-* Build the project with the following command:
+---
 
-```sh
-make -j4
-```
+#### Troubleshooting
 
-* This should create a directory 'bin' under the build directory, with the 'OpenApoc' executable file. OpenApoc by default expects the data folder to be in the current working directory, so running the executable from the root of the git checkout should work.
-
-```sh
-cd ..
-open ./build/bin/OpenApoc.app
-```
+| Symptom | Fix |
+|---|---|
+| `brew: command not found` | Install Homebrew from https://brew.sh. On Apple Silicon the prefix is `/opt/homebrew`; on Intel it is `/usr/local`. |
+| `cmake: No CMAKE_CXX_COMPILER` | Run `xcode-select --install` to install the Xcode Command Line Tools, then retry. |
+| Configure prints "EXTRACT_DATA automatically disabled" | Normal — place `cd.iso` in `data/` and re-run `cmake --preset …` to enable data extraction. |
+| `OpenGL is deprecated on macOS` warnings at runtime | Expected; the engine uses `GL_ARB_ES3_compatibility` via Apple's compatibility path. Metal/MoltenVK support is a future goal. |
+| App refuses to open ("damaged" / Gatekeeper) | Right-click → Open, or run `xattr -dr com.apple.quarantine build/…/OpenApoc.app`. Signed/notarized releases are a future milestone. |
 
 
 ## OpenApoc Coding Style

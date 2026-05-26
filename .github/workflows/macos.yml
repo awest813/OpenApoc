@@ -2,9 +2,6 @@ name: macOS
 
 on: [push, pull_request]
 
-env:
-  BUILD_TYPE: Release
-
 jobs:
   build:
     strategy:
@@ -13,8 +10,12 @@ jobs:
         include:
           - name: "Apple Silicon (ARM64)"
             os: macos-15
+            preset: macos-arm64
+            artifact_suffix: apple-silicon
           - name: "Intel (x86_64)"
             os: macos-13
+            preset: macos-x86_64
+            artifact_suffix: intel
 
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
@@ -24,9 +25,10 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Create build directory
-        run: cmake -E make_directory ${{ runner.workspace }}/build
-
+      # Download and extract the minimal cd.iso used by the test suite.
+      # The CMake preset has EXTRACT_DATA=OFF, so a missing file no longer
+      # blocks the build; we still fetch it so that ctest can exercise the
+      # data-loading code paths.
       - name: Download minimal cd image
         run: wget http://s2.jonnyh.net/pub/cd_minimal.iso.xz -O $GITHUB_WORKSPACE/data/cd.iso.xz
 
@@ -36,19 +38,22 @@ jobs:
       - name: Install dependencies
         run: brew install cmake boost sdl2 libvorbis ninja
 
-      - name: Configure CMake
-        working-directory: ${{ runner.workspace }}/build
-        run: |
-          cmake $GITHUB_WORKSPACE \
-            -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
-            -GNinja \
-            -DBUILD_LAUNCHER=OFF \
-            -DUSE_PCH=ON
+      # Configure + build using the standardised CMake preset.
+      # This is the same flow documented in tools/macos-setup.sh.
+      - name: Configure (preset ${{ matrix.preset }})
+        run: cmake --preset ${{ matrix.preset }} -S $GITHUB_WORKSPACE
 
-      - name: Build
-        working-directory: ${{ runner.workspace }}/build
-        run: cmake --build . --config $BUILD_TYPE
+      - name: Build (preset ${{ matrix.preset }})
+        run: cmake --build --preset ${{ matrix.preset }} --parallel
 
-      - name: Test
-        working-directory: ${{ runner.workspace }}/build
-        run: ctest -C $BUILD_TYPE --output-on-failure
+      - name: Test (preset ${{ matrix.preset }})
+        run: ctest --preset ${{ matrix.preset }} --output-on-failure
+
+      # Upload the app bundle so the artifact can be downloaded and run
+      # directly — matching the "download artifact and run" user path.
+      - name: Upload app bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenApoc-macOS-${{ matrix.artifact_suffix }}
+          path: ${{ github.workspace }}/build/${{ matrix.preset }}/bin/OpenApoc.app
+          if-no-files-found: error

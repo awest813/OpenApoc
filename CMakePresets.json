@@ -1,0 +1,89 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 30, "patch": 0 },
+
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "USE_PCH": "ON",
+        "BUILD_LAUNCHER": "OFF",
+        "EXTRACT_DATA": "OFF"
+      }
+    },
+
+    {
+      "name": "macos-arm64",
+      "displayName": "macOS – Apple Silicon (arm64) dev build",
+      "description": "Fast development build for Apple Silicon Macs. Homebrew prefix: /opt/homebrew.",
+      "inherits": "base",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_OSX_ARCHITECTURES": "arm64"
+      }
+    },
+
+    {
+      "name": "macos-x86_64",
+      "displayName": "macOS – Intel (x86_64) dev build",
+      "description": "Development build for Intel Macs. Homebrew prefix: /usr/local.",
+      "inherits": "base",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_OSX_ARCHITECTURES": "x86_64"
+      }
+    },
+
+    {
+      "name": "macos-universal",
+      "displayName": "macOS – Universal Binary release",
+      "description": "Release-optimised universal binary (arm64 + x86_64). Requires Homebrew libraries for both architectures.",
+      "inherits": "base",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_OSX_ARCHITECTURES": "arm64;x86_64",
+        "LTO": "ON"
+      }
+    }
+  ],
+
+  "buildPresets": [
+    {
+      "name": "macos-arm64",
+      "configurePreset": "macos-arm64",
+      "displayName": "Build – Apple Silicon"
+    },
+    {
+      "name": "macos-x86_64",
+      "configurePreset": "macos-x86_64",
+      "displayName": "Build – Intel"
+    },
+    {
+      "name": "macos-universal",
+      "configurePreset": "macos-universal",
+      "displayName": "Build – Universal Binary"
+    }
+  ],
+
+  "testPresets": [
+    {
+      "name": "macos-arm64",
+      "configurePreset": "macos-arm64",
+      "displayName": "Test – Apple Silicon",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "macos-x86_64",
+      "configurePreset": "macos-x86_64",
+      "displayName": "Test – Intel",
+      "output": { "outputOnFailure": true }
+    }
+  ]
+}

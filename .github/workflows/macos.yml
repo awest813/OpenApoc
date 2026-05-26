@@ -1,0 +1,54 @@
+name: macOS
+
+on: [push, pull_request]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: "Apple Silicon (ARM64)"
+            os: macos-15
+          - name: "Intel (x86_64)"
+            os: macos-13
+
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Create build directory
+        run: cmake -E make_directory ${{ runner.workspace }}/build
+
+      - name: Download minimal cd image
+        run: wget http://s2.jonnyh.net/pub/cd_minimal.iso.xz -O $GITHUB_WORKSPACE/data/cd.iso.xz
+
+      - name: Extract minimal cd image
+        run: xz -d $GITHUB_WORKSPACE/data/cd.iso.xz
+
+      - name: Install dependencies
+        run: brew install cmake boost sdl2 libvorbis ninja
+
+      - name: Configure CMake
+        working-directory: ${{ runner.workspace }}/build
+        run: |
+          cmake $GITHUB_WORKSPACE \
+            -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+            -GNinja \
+            -DBUILD_LAUNCHER=OFF \
+            -DUSE_PCH=ON
+
+      - name: Build
+        working-directory: ${{ runner.workspace }}/build
+        run: cmake --build . --config $BUILD_TYPE
+
+      - name: Test
+        working-directory: ${{ runner.workspace }}/build
+        run: ctest -C $BUILD_TYPE --output-on-failure

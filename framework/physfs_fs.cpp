@@ -24,6 +24,10 @@
 #include <endian.h>
 #elif defined(__FreeBSD__)
 #include <sys/endian.h>
+#elif defined(__APPLE__)
+/* macOS (Intel and Apple Silicon) is always little-endian; no-op conversions are correct */
+static inline uint16_t le16toh(uint16_t val) { return val; }
+static inline uint32_t le32toh(uint32_t val) { return val; }
 #else
 /* We assume all other platforms are little endian for now */
 static inline uint16_t le16toh(uint16_t val) { return val; }

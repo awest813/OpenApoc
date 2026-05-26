@@ -191,9 +191,6 @@ target_compile_definitions(OpenApoc_Framework PUBLIC
 if(APPLE)
 	target_compile_definitions(OpenApoc_Framework PRIVATE
 			"-DGLESWRAP_PLATFORM_MACHO")
-	# OSX doesn't seem to support the c++11 'thread_local' keyword
-	target_compile_definitions(OpenApoc_Framework PRIVATE
-			"-DBROKEN_THREAD_LOCAL")
 elseif(WIN32)
 	target_compile_definitions(OpenApoc_Framework PRIVATE "-DGLESWRAP_PLATFORM_WGL")
 else()

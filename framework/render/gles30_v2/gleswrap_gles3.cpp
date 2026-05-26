@@ -24,7 +24,8 @@
 #include <EGL/egl.h>
 
 #elif defined(GLESWRAP_PLATFORM_MACHO)
-#include <mach-o/dyld.h>
+// Use dlopen/dlsym for modern macOS (NS* symbol APIs were removed in macOS 12)
+#include <dlfcn.h>
 #else
 #error Unknown platform
 #endif
@@ -50,7 +51,7 @@ class Gles3::Gles3Loader
 {
 
   private:
-#if defined(GLESWRAP_PLATFORM_DLFCN)
+#if defined(GLESWRAP_PLATFORM_DLFCN) || defined(GLESWRAP_PLATFORM_MACHO)
 	void *dlfcn_handle;
 #elif defined(GLESWRAP_PLATFORM_WGL)
 	HMODULE win32_handle;
@@ -65,6 +66,14 @@ class Gles3::Gles3Loader
 		{
 #if defined(GLESWRAP_PLATFORM_DLFCN)
 			this->dlfcn_handle = nullptr;
+#elif defined(GLESWRAP_PLATFORM_MACHO)
+			// Open the system OpenGL framework for symbol lookup
+			this->dlfcn_handle =
+			    dlopen("/System/Library/Frameworks/OpenGL.framework/OpenGL", RTLD_LAZY);
+			if (!this->dlfcn_handle)
+			{
+				LogInfo("Failed to open system OpenGL framework: \"{0}\"", dlerror());
+			}
 #elif defined(GLESWRAP_PLATFORM_WGL)
 			// Win32 may need to use LoadLibrary as wglGetProcAddress fails (on some systems?) for
 			// stuff in gl1.1 and below, as they're directly exported by opengl32.dll.
@@ -80,6 +89,12 @@ class Gles3::Gles3Loader
 			{
 				LogInfo("Failed to load library \"{0}\" : \"{1}\"", lib_name.c_str(), dlerror());
 			}
+#elif defined(GLESWRAP_PLATFORM_MACHO)
+			this->dlfcn_handle = dlopen(lib_name.c_str(), RTLD_NOW | RTLD_LOCAL);
+			if (!this->dlfcn_handle)
+			{
+				LogInfo("Failed to load library \"{0}\" : \"{1}\"", lib_name.c_str(), dlerror());
+			}
 #elif defined(GLESWRAP_PLATFORM_WGL)
 			this->win32_handle = LoadLibraryA("opengl32.dll");
 #endif
@@ -87,7 +102,7 @@ class Gles3::Gles3Loader
 	}
 	~Gles3Loader()
 	{
-#if defined(GLESWRAP_PLATFORM_DLFCN)
+#if defined(GLESWRAP_PLATFORM_DLFCN) || defined(GLESWRAP_PLATFORM_MACHO)
 		if (this->dlfcn_handle)
 			dlclose(this->dlfcn_handle);
 #elif defined(GLESWRAP_PLATFORM_WGL)
@@ -125,21 +140,19 @@ class Gles3::Gles3Loader
 			if (func_pointer)
 				return true;
 #elif defined(GLESWRAP_PLATFORM_MACHO)
-			NSSymbol symbol = NULL;
-			// MacOS adds a '_' to C symbols apparently
-			std::string symName = std::string("_") + full_proc_name;
-			if (NSIsSymbolNameDefined(symName.c_str()))
+			// Use dlsym on the system OpenGL framework handle
+			if (this->dlfcn_handle)
 			{
-				symbol = NSLookupAndBindSymbol(symName.c_str());
-				func_pointer = reinterpret_cast<T>(NSAddressOfSymbol(symbol));
-				return true;
+				func_pointer =
+				    reinterpret_cast<T>(dlsym(this->dlfcn_handle, full_proc_name.c_str()));
+				if (func_pointer)
+					return true;
 			}
-			return false;
 #endif
 		}
 		else
 		{
-#if defined(GLESWRAP_PLATFORM_DLFCN)
+#if defined(GLESWRAP_PLATFORM_DLFCN) || defined(GLESWRAP_PLATFORM_MACHO)
 			if (this->dlfcn_handle)
 			{
 				func_pointer =

@@ -132,12 +132,16 @@ Once notarized, users can launch the app without any quarantine workaround.
 - [x] Remove obsolete `BROKEN_THREAD_LOCAL` workaround
 - [x] One-command setup script (`tools/macos-setup.sh`)
 - [x] One-command run script (`tools/macos-run.sh`)
+- [x] One-command diagnostics script (`tools/macos-diag.sh`)
 - [x] CMake presets for arm64, x86\_64, and universal
 - [x] Remove configure-time blocker for missing `cd.iso`
 - [x] CI artifact upload (downloadable app bundles per architecture)
 - [x] Post-build verification in setup script (bundle check + startup probe)
 - [x] Automated smoke tests in CI
-- [x] Release workflow — tagged releases publish arm64 + x86\_64 zip artifacts
+- [x] Release workflow — tagged releases publish arm64 + x86\_64 zip artifacts with SHA-256 checksums
+- [x] "Which build do I need?" decision table in release notes
+- [x] macOS-specific GitHub issue template with diagnostics prompt
+- [x] macOS CI badge in README
 - [x] Code signing and notarization documentation (this file)
 - [ ] Resolve any remaining Clang/AppleClang compiler warnings
 - [ ] Confirm test suite passes on both architectures

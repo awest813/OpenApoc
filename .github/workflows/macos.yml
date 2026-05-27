@@ -2,6 +2,10 @@ name: macOS
 
 on: [push, pull_request]
 
+concurrency:
+  group: macos-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     strategy:
@@ -12,10 +16,12 @@ jobs:
             os: macos-15
             preset: macos-arm64
             artifact_suffix: apple-silicon
+            expected_arch: arm64
           - name: "Intel (x86_64)"
             os: macos-13
             preset: macos-x86_64
             artifact_suffix: intel
+            expected_arch: x86_64
 
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
@@ -37,6 +43,15 @@ jobs:
 
       - name: Install dependencies
         run: brew install cmake boost sdl2 libvorbis ninja
+
+      - name: Verify runner architecture
+        run: |
+          echo "Runner architecture: $(uname -m)"
+          echo "Expected architecture: ${{ matrix.expected_arch }}"
+          if [ "$(uname -m)" != "${{ matrix.expected_arch }}" ]; then
+            echo "Runner architecture does not match the preset target."
+            exit 1
+          fi
 
       # Configure + build using the standardised CMake preset.
       # This is the same flow documented in tools/macos-setup.sh.

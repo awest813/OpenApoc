@@ -1,42 +1,51 @@
 ---
 name: Bug Report
-about: Create a report to help us improve OpenApoc by identifying problems
+about: Report a reproducible OpenApoc issue
 title: ''
 labels: ''
 assignees: ''
 
 ---
 
-**BEFORE POSTING, HAVE YOU SEARCHED THE TRACKER FOR EXISTING COPIES OF THE PROBLEM?**
-If so, please add the following details to those existing reports. Use broad phrases and keywords when searching for maximal results - not all related issues may use the same terminology as you
+> **macOS users:** use the dedicated
+> [Bug Report — macOS](?template=bug-report-macos.md) template instead. It asks
+> for `tools/macos-diag.sh` output and is the fastest path for Apple Silicon or
+> Intel Mac support.
 
-**Desktop (please complete the following information):**
- - OS: [e.g. Windows 10 x64 2020H2]
- - OpenApoc Version [e.g. 0.386-42 - the number attached to the AppVeyor build]
- - List of Mod files in use *and their version* separated by commas [e.g. Extended Weapons Mod v9.0I PREVIEW, Falcon LWP Mod v1.4]
+**Before posting:** search existing issues for the same problem. If you find one,
+add your details there instead of opening a duplicate.
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+## Platform
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+- OS:
+- Architecture:
+- OpenApoc version / commit:
+- Install method:
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+## Describe the bug
 
-**Savegame**
-Please include a copy of your .save file with the bug
-Save's can be found under the appropriate directory of the route folder where you installed OpenApoc if you used a "Portable" installation, or via %APPDATA% if installed on Windows as none-portable.
+<!-- A clear and concise description of what happened. -->
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem. GitHub supports direct pasting if necessary.
+## Steps to reproduce
 
-**Additional context**
-Add any other context about the problem here.
+1.
+2.
+3.
 
-**Copy of your OpenApoc_settings.conf**
-This can be found under the appropriate directory of the route folder where you installed OpenApoc if you used a "Portable" installation, or via %APPDATA% if installed on Windows as none-portable.
+## Expected behavior
+
+<!-- What should have happened instead? -->
+
+## Game data
+
+- [ ] Steam `cd.iso`
+- [ ] GOG `.cue`/`.bin`
+- [ ] Other:
+
+## Savegame / settings
+
+<!-- If relevant, attach a save file and OpenApoc_settings.conf. -->
+
+## Screenshots / logs
+
+<!-- Paste terminal output, crash logs, screenshots, or other useful context. -->

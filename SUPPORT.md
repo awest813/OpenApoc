@@ -1,7 +1,9 @@
 # OpenApoc macOS Support
 
 This fork targets macOS as a first-class platform, with Apple Silicon as the
-primary target and Intel as a secondary (best-effort) target.
+primary target and Intel as a secondary (best-effort) target. Windows and Linux
+remain upstream compatibility concerns and are not release-blocking for this
+fork.
 
 ## Quick start
 
@@ -18,10 +20,11 @@ instructions including manual CMake preset usage and troubleshooting.
 
 ## Support Tiers
 
-| Platform | Architecture | macOS versions | Status |
-|---|---|---|---|
-| Apple Silicon | ARM64 (arm64) | 14 Sonoma, 15 Sequoia | **Primary** — CI-tested on every push |
-| Intel Mac | x86\_64 | 13 Ventura | **Secondary** — CI-tested on every push, best-effort |
+| Tier | Platform | Architecture | macOS versions | Status |
+|---|---|---|---|---|
+| Tier 1 | Apple Silicon | ARM64 (arm64) | 14 Sonoma, 15 Sequoia | **Primary** — CI-tested on every push |
+| Tier 2 | Intel Mac | x86\_64 | 13 Ventura | **Secondary** — CI-tested on every push while runners are available, best-effort |
+| Out of scope | Windows / Linux | n/a | n/a | Upstream compatibility only |
 
 ### Primary (Apple Silicon)
 
@@ -36,6 +39,38 @@ instructions including manual CMake preset usage and troubleshooting.
   releases.
 * Intel support may be dropped in a future release as Apple's transition to
   Apple Silicon is complete and GitHub's Intel macOS runners are being retired.
+
+### Windows / Linux
+
+* This fork does not publish Windows or Linux release artifacts.
+* Non-mac build checks are manual, non-blocking upstream compatibility checks.
+* Windows and Linux fixes are welcome when they do not weaken the macOS-first
+  support contract.
+
+## Governance
+
+See [`APPLE_SILICON_INTEL_FORK.md`](APPLE_SILICON_INTEL_FORK.md) for the full
+fork policy, QA matrix, CI/CD policy, release requirements, and Intel
+deprecation playbook.
+
+### Branch protection expectation
+
+The `macOS` GitHub Actions workflow should be the required merge and release
+gate for this fork. Apple Silicon failures block merges and releases. Intel
+failures should be investigated, but may be waived for release if the issue is
+Intel-only, low-impact, or caused by hosted runner retirement.
+
+### Intel deprecation triggers
+
+Intel release artifacts should be reassessed if any of the following occur:
+
+1. GitHub-hosted `macos-13` Intel runners are retired.
+2. No trusted self-hosted Intel runner is available.
+3. Intel-only defects require invasive changes that risk Apple Silicon stability.
+4. Intel usage and issue volume no longer justify release maintenance.
+
+If Intel release artifacts are removed, keep source-build notes for one release
+cycle and announce the change in release notes.
 
 ## Build Requirements
 
@@ -66,6 +101,40 @@ presets:
 ```sh
 cmake --preset macos-arm64 && cmake --build --preset macos-arm64
 ```
+
+Universal binaries are release-oriented validation artifacts. Routine CI and
+user downloads use separate per-architecture builds so dependency and runtime
+issues are easier to diagnose.
+
+## QA Matrix
+
+| Check | Apple Silicon | Intel |
+|---|---|---|
+| Configure/build via CMake preset | Required | Required while runners exist |
+| Unit tests via `ctest` | Required | Required while runners exist |
+| App bundle structure check | Required | Required |
+| Startup probe (`--help`) | Required | Required |
+| Game data load smoke | Required before stable release | Best-effort |
+| Rendering/audio/save-load smoke | Required before stable release | Best-effort |
+| Performance profiling | Required before stable release | Optional |
+
+## Issue Triage
+
+macOS bugs should use the macOS issue template and include:
+
+```sh
+bash tools/macos-diag.sh
+```
+
+Use labels consistently when triaging:
+
+* `platform:macos`
+* `arch:arm64`
+* `arch:x86_64`
+
+Apple Silicon correctness bugs are release-blocking unless explicitly accepted
+as known issues. Intel-only bugs are evaluated by impact, implementation risk,
+and runner availability.
 
 ## Known Limitations
 

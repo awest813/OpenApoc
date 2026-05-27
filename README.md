@@ -2,8 +2,9 @@
 
 > OpenApoc is an open-source re-implementation of the original [X-COM: Apocalypse](https://www.ufopaedia.org/index.php/Apocalypse), that requires the original files to run, licensed under the GPL3 and written in C++ / SDL2. It was originally founded by PmProg in July 2014, and has since grown a significant [community](https://www.ufopaedia.org/index.php/Credits_(OpenApoc)).
 
-[![Windows Build Status](https://img.shields.io/appveyor/build/OpenApoc/openapoc?branch=master&label=AppVeyor%20Windows&logo=appveyor&logoColor=ffffff&labelColor=282828)](https://ci.appveyor.com/project/openapoc/openapoc/branch/master)
 [![macOS CI](https://github.com/awest813/OpenApoc/actions/workflows/macos.yml/badge.svg)](https://github.com/awest813/OpenApoc/actions/workflows/macos.yml)
+
+> **macOS-first fork:** this repository focuses on Apple Silicon and Intel Macs. Apple Silicon is the primary release target, Intel is best-effort, and Windows/Linux support tracks upstream without blocking this fork's releases. See [APPLE_SILICON_INTEL_FORK.md](APPLE_SILICON_INTEL_FORK.md) and [SUPPORT.md](SUPPORT.md).
 [![Openapoc issues](https://img.shields.io/github/issues-raw/OpenApoc/OpenApoc?color=1182c3&logo=GitHub&labelColor=282828)](https://github.com/openapoc/openapoc/issues)
 [![Translate OpenApoc](https://img.shields.io/badge/Translate-Openapoc-blue.svg)](https://www.transifex.com/x-com-apocalypse/apocalypse/)
 [![OpenApoc GPL3 license](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://github.com/OpenApoc/OpenApoc/blob/master/LICENSE)
@@ -18,11 +19,12 @@
 * [What's left to finish?](#whats-left)
 * [Contribute and FAQ](#contribute-and-faq)
 * [Building](#building)
-  * [Building on Windows](#building-on-windows)
-  * [Building on Linux](#building-on-linux)
+  * [Building on Windows (upstream compatibility)](#building-on-windows-upstream-compatibility)
+  * [Building on Linux (manual upstream compatibility)](#building-on-linux-manual-upstream-compatibility)
   * [Building on macOS](#building-on-macos)  
 * [OpenApoc Coding Style](#openapoc-coding-style)
 * [How to setup OpenApoc](#how-to-setup-openapoc)
+* [Apple Silicon + Intel fork policy](#apple-silicon--intel-fork-policy)
 * [Contact us](#contact-us)
 
 
@@ -88,7 +90,23 @@ The following libraries are also used, but are shipped as submodules in the repo
 * [magic_enum](https://github.com/Neargye/magic_enum) - Header-only C++17 library provides static reflection for enums, work with any enum type without any macro or boilerplate code.
 
 
-### Building on Windows
+## Apple Silicon + Intel fork policy
+
+This fork is maintained for macOS first:
+
+| Tier | Platform | Status | CI / release expectation |
+|---|---|---|---|
+| Tier 1 | Apple Silicon (arm64, macOS 14+) | Primary | Required for merges and releases |
+| Tier 2 | Intel Mac (x86_64, macOS 13) | Best-effort | Built while GitHub-hosted Intel runners remain available |
+| Out of scope | Windows / Linux | Upstream compatibility only | Not release-blocking for this fork |
+
+Use the macOS presets and helper scripts described below. The complete fork
+policy, CI rules, QA matrix, and Intel deprecation playbook live in
+[APPLE_SILICON_INTEL_FORK.md](APPLE_SILICON_INTEL_FORK.md).
+
+### Building on Windows (upstream compatibility)
+
+> Windows builds are not a release target for this macOS-first fork. These upstream instructions are retained for contributors who need compatibility checks.
 
 * Install [Visual Studio](https://visualstudio.microsoft.com/vs/) (2017 or later) with "Desktop Development with C++" workload.
 * Install a Git client eg. [Github Desktop](https://desktop.github.com/).
@@ -136,7 +154,9 @@ vcpkg --triplet x86-windows install sdl2 boost-locale boost-program-options boos
 * When running OpenApoc from the Visual Studio UI, the working directory is set to the root of the project, so the data folder should already be in the right place. If you want to run outside of Visual Studio, you need to copy the whole 'data' folder (including the cd.iso file) into the folder openapoc.exe resides in.
 
 
-### Building on Linux
+### Building on Linux (manual upstream compatibility)
+
+> Linux builds are retained as manual, non-blocking upstream compatibility checks. They do not gate this fork's macOS releases.
 
 (Tested on Ubuntu 22.04 and 24.04)
 
@@ -199,7 +219,7 @@ make -j4
 
 > **Supported:** Apple Silicon (arm64, macOS 14+) — **primary**. Intel (x86\_64, macOS 13) — best-effort.
 >
-> See [SUPPORT.md](SUPPORT.md) for the full support matrix.
+> See [SUPPORT.md](SUPPORT.md) for the full support matrix and [APPLE_SILICON_INTEL_FORK.md](APPLE_SILICON_INTEL_FORK.md) for governance, CI, release, and Intel deprecation policy.
 
 #### macOS compatibility at a glance
 
@@ -427,37 +447,18 @@ https://www.ufopaedia.org/index.php/Coding_Style_(OpenApoc)
 
 ## How to setup OpenApoc
 
-OPENGL 2.0 SUPPORTIVE VIDEO CARDS ARE REQUIRED
+OPENGL 2.0 SUPPORTIVE VIDEO CARDS ARE REQUIRED. On macOS, OpenApoc uses Apple's
+OpenGL compatibility path; deprecation warnings are expected.
 
-WINDOWS USERS: You will require the LATEST Visual C++ Redistributable obtained from windows update to run OpenApoc
-https://docs.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist?view=msvc-170
+**macOS users:** Pre-built app bundles are available on the
+[Releases page](https://github.com/awest813/OpenApoc/releases). Download the zip
+for your Mac, unzip it, right-click → Open to bypass Gatekeeper on first launch,
+and place `cd.iso` next to `OpenApoc.app`. To build from source instead, see
+[Building on macOS](#building-on-macos).
 
-Simple steps to play OpenApoc on Windows right now
-(Keep in mind that it is ALPHA - this means bugs, crashes and not all features implemented, use our bug-tracker at https://github.com/OpenApoc/OpenApoc/issues to report bugs and navigate known ones)
-
-1) Download the OpenApoc core files from https://github.com/OpenApoc/OpenApoc/releases
-- For experimental builds visit  https://ci.appveyor.com/project/OpenApoc/openapoc/history
-- If you see a green bar next to the latest build then you can download it, click a build that is green, or use "Show More" to list all builds
-- Click ARTIFACTS (Currently only Windows x64)
-- Download the option that ends with a ".exe" (and without "debug" in it)
-- Run the downloaded exe installer, this will guide you through the installation
-- Use "portable install" if you want saves and settings to remain in the install directory
-
-2) Acquire the original X-Com Apocalypse CD-ROM and create an ISO Image of that, or use Steam's "cd.iso" or GOGs "xcom.cue"/"xcom.bin"
-- If you have already specified the "cd.iso" location in the installer, you don't need to do this step
-- You need have all files in the disc ISO file including MUSIC so only legit ISOs will work and not torrents that often lack the music
-- If the disc image is in .iso format, rename it to "cd.iso"
-- We also support the GOG .cue / .bin files!
-
-3) Put cd.iso (image or folder) into the "data" folder under the specified OpenApoc install folder
-- If you have already specified the "cd.iso" location in the installer, you don't need to do this step
-- To use GOG .cue/.bin you rename the XCOM.cue file to "cd.iso", put that in the OpenApoc data folder, then put the XCOM.BIN, without renaming it, into the data folder too
-
-4) Run and enjoy!
-
-**Linux users:** After compiling (see [Building on Linux](#building-on-linux) above), copy `cd.iso` into the `data/` directory and run the executable from the repository root.
-
-**macOS users:** Pre-built app bundles are available on the [Releases page](https://github.com/awest813/OpenApoc/releases) — download the zip for your Mac, unzip, right-click → Open to bypass Gatekeeper, then place `cd.iso` next to `OpenApoc.app`. To build from source instead, see [Building on macOS](#building-on-macos) above.
+**Windows and Linux users:** this fork does not publish Windows or Linux
+releases. Use upstream OpenApoc releases or the manual compatibility build
+instructions above.
 
 
 ## Contact us

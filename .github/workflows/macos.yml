@@ -32,9 +32,10 @@ jobs:
           submodules: recursive
 
       # Download and extract the minimal cd.iso used by the test suite.
-      # The CMake preset has EXTRACT_DATA=OFF, so a missing file no longer
-      # blocks the build; we still fetch it so that ctest can exercise the
-      # data-loading code paths.
+      # EXTRACT_DATA=ON is passed at configure time so the data extractor runs
+      # during the build and produces the game-state archives (base_gamestate,
+      # difficulty0, …) that test_serialize_difficulty0 and test_lab_assignment
+      # require.
       - name: Download minimal cd image
         run: wget http://s2.jonnyh.net/pub/cd_minimal.iso.xz -O $GITHUB_WORKSPACE/data/cd.iso.xz
 
@@ -55,8 +56,10 @@ jobs:
 
       # Configure + build using the standardised CMake preset.
       # This is the same flow documented in tools/macos-setup.sh.
+      # Override EXTRACT_DATA=ON so the data extractor produces the game-state
+      # archives (base_gamestate, difficulty0, …) needed by the test suite.
       - name: Configure (preset ${{ matrix.preset }})
-        run: cmake --preset ${{ matrix.preset }} -S $GITHUB_WORKSPACE
+        run: cmake --preset ${{ matrix.preset }} -S $GITHUB_WORKSPACE -DEXTRACT_DATA=ON
 
       - name: Build (preset ${{ matrix.preset }})
         run: cmake --build --preset ${{ matrix.preset }} --parallel

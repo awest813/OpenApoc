@@ -49,6 +49,31 @@ jobs:
       - name: Test (preset ${{ matrix.preset }})
         run: ctest --preset ${{ matrix.preset }} --output-on-failure
 
+      # Smoke test: verify the app bundle structure and that the binary
+      # starts cleanly (--help exits before SDL/display initialisation).
+      # A non-1 non-0 exit code indicates a crash (SIGSEGV = 139, etc.).
+      - name: Smoke test — app bundle
+        run: |
+          EXEC="${GITHUB_WORKSPACE}/build/${{ matrix.preset }}/bin/OpenApoc.app/Contents/MacOS/OpenApoc"
+          echo "Checking bundle structure …"
+          test -d "${GITHUB_WORKSPACE}/build/${{ matrix.preset }}/bin/OpenApoc.app"
+          test -x "$EXEC"
+          echo "Checking library links …"
+          otool -L "$EXEC"
+          echo "Running startup probe (--help) …"
+          set +e
+          "$EXEC" --help > /tmp/openapoc-help.txt 2>&1
+          EXIT_CODE=$?
+          set -e
+          cat /tmp/openapoc-help.txt
+          # EXIT_FAILURE (1) is expected when --help is passed; 0 is also fine.
+          # Anything else indicates a crash or missing library.
+          if [ "$EXIT_CODE" -ne 0 ] && [ "$EXIT_CODE" -ne 1 ]; then
+            echo "Startup probe failed with exit code $EXIT_CODE — possible crash or missing library."
+            exit 1
+          fi
+          echo "Startup probe OK (exit code $EXIT_CODE)"
+
       # Upload the app bundle so the artifact can be downloaded and run
       # directly — matching the "download artifact and run" user path.
       - name: Upload app bundle

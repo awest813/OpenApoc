@@ -27,7 +27,7 @@ instructions including manual CMake preset usage and troubleshooting.
 
 * CI runs on `macos-15` (GitHub-hosted Apple Silicon runner).
 * All regressions on this platform are treated as blocking issues.
-* Releases are tested and signed for this platform.
+* Tagged releases publish a pre-built app bundle for this platform.
 
 ### Secondary (Intel)
 
@@ -80,6 +80,50 @@ cmake --preset macos-arm64 && cmake --build --preset macos-arm64
   xattr -dr com.apple.quarantine build/macos-arm64/bin/OpenApoc.app
   ```
 
+## Gatekeeper & Code Signing
+
+Apps distributed outside the Mac App Store must be **signed** (with an Apple
+Developer ID) and **notarized** (submitted to Apple's scan service) to bypass
+Gatekeeper without user intervention.
+
+### Current state
+
+All builds — including CI artifacts and tagged releases — are **unsigned**.
+First launch therefore triggers a Gatekeeper warning ("app is damaged" or
+"developer cannot be verified").
+
+### Workaround for unsigned builds
+
+```sh
+# Strip the quarantine flag that macOS attaches when a file is downloaded:
+xattr -dr com.apple.quarantine /path/to/OpenApoc.app
+
+# Or right-click the .app → Open → click Open in the security dialog.
+```
+
+### Future: signing & notarization roadmap
+
+1. Obtain an Apple Developer Program membership (~$99/year).
+2. Create a **Developer ID Application** certificate in Xcode / Keychain.
+3. Sign the app bundle:
+   ```sh
+   codesign --deep --force --options runtime \
+     --sign "Developer ID Application: <Name> (<TeamID>)" \
+     build/macos-arm64/bin/OpenApoc.app
+   ```
+4. Notarize with `notarytool`:
+   ```sh
+   xcrun notarytool submit OpenApoc-macOS-apple-silicon.zip \
+     --apple-id "<email>" --team-id "<TeamID>" \
+     --password "<app-specific-password>" --wait
+   ```
+5. Staple the notarization ticket:
+   ```sh
+   xcrun stapler staple build/macos-arm64/bin/OpenApoc.app
+   ```
+
+Once notarized, users can launch the app without any quarantine workaround.
+
 ## Roadmap
 
 ### Short-term — "Builds reliably"
@@ -91,13 +135,16 @@ cmake --preset macos-arm64 && cmake --build --preset macos-arm64
 - [x] CMake presets for arm64, x86\_64, and universal
 - [x] Remove configure-time blocker for missing `cd.iso`
 - [x] CI artifact upload (downloadable app bundles per architecture)
+- [x] Post-build verification in setup script (bundle check + startup probe)
+- [x] Automated smoke tests in CI
+- [x] Release workflow — tagged releases publish arm64 + x86\_64 zip artifacts
+- [x] Code signing and notarization documentation (this file)
 - [ ] Resolve any remaining Clang/AppleClang compiler warnings
 - [ ] Confirm test suite passes on both architectures
 
 ### Mid-term — "Stable release"
-- [ ] App bundle code signing and notarization documentation
+- [ ] Signed and notarized release builds
 - [ ] Performance profiling on Apple Silicon
-- [ ] Automated smoke tests in CI (headless render check)
 
 ### Long-term — Modernization
 - [ ] Evaluate Metal/MoltenVK rendering backend

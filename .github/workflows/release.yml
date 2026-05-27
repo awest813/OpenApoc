@@ -24,6 +24,9 @@ jobs:
   build:
     name: Build (${{ matrix.name }})
     runs-on: ${{ matrix.os }}
+    env:
+      MACOS_SIGNING_ENABLED: ${{ secrets.MACOS_SIGNING_CERTIFICATE_P12 != '' && secrets.MACOS_SIGNING_CERTIFICATE_PASSWORD != '' && secrets.MACOS_DEVELOPER_ID != '' }}
+      MACOS_NOTARIZATION_ENABLED: ${{ secrets.MACOS_NOTARY_APPLE_ID != '' && secrets.MACOS_NOTARY_TEAM_ID != '' && secrets.MACOS_NOTARY_PASSWORD != '' }}
     strategy:
       fail-fast: false
       matrix:
@@ -65,6 +68,36 @@ jobs:
             exit 1
           fi
 
+      # Optional signing stage. Configure these repository secrets to enable it:
+      #   MACOS_SIGNING_CERTIFICATE_P12      base64-encoded Developer ID .p12
+      #   MACOS_SIGNING_CERTIFICATE_PASSWORD password for the .p12
+      #   MACOS_DEVELOPER_ID                 Developer ID Application identity
+      - name: Import signing certificate
+        if: ${{ env.MACOS_SIGNING_ENABLED == 'true' }}
+        env:
+          MACOS_SIGNING_CERTIFICATE_P12: ${{ secrets.MACOS_SIGNING_CERTIFICATE_P12 }}
+          MACOS_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_SIGNING_CERTIFICATE_PASSWORD }}
+        run: |
+          KEYCHAIN_PATH="${{ runner.temp }}/openapoc-signing.keychain-db"
+          CERT_PATH="${{ runner.temp }}/openapoc-signing.p12"
+          echo "$MACOS_SIGNING_CERTIFICATE_P12" | base64 --decode > "$CERT_PATH"
+          security create-keychain -p "$RUNNER_TEMP" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$RUNNER_TEMP" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -P "$MACOS_SIGNING_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$RUNNER_TEMP" "$KEYCHAIN_PATH"
+
+      - name: Sign app bundle
+        if: ${{ env.MACOS_SIGNING_ENABLED == 'true' }}
+        env:
+          MACOS_DEVELOPER_ID: ${{ secrets.MACOS_DEVELOPER_ID }}
+        run: |
+          APP="${{ github.workspace }}/build/${{ matrix.preset }}/bin/OpenApoc.app"
+          codesign --deep --force --options runtime --timestamp \
+            --sign "$MACOS_DEVELOPER_ID" "$APP"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+
       # Package the app bundle as a zip.
       # `ditto` preserves macOS resource forks and extended attributes.
       - name: Package app bundle
@@ -72,6 +105,30 @@ jobs:
           cd "${{ github.workspace }}/build/${{ matrix.preset }}/bin"
           ditto -c -k --keepParent OpenApoc.app \
             "${{ github.workspace }}/OpenApoc-macOS-${{ matrix.artifact_suffix }}.zip"
+
+      # Optional notarization stage. In addition to signing secrets, configure:
+      #   MACOS_NOTARY_APPLE_ID              Apple ID email
+      #   MACOS_NOTARY_TEAM_ID               Apple Developer Team ID
+      #   MACOS_NOTARY_PASSWORD              app-specific password
+      - name: Notarize app bundle
+        if: ${{ env.MACOS_SIGNING_ENABLED == 'true' && env.MACOS_NOTARIZATION_ENABLED == 'true' }}
+        env:
+          MACOS_NOTARY_APPLE_ID: ${{ secrets.MACOS_NOTARY_APPLE_ID }}
+          MACOS_NOTARY_TEAM_ID: ${{ secrets.MACOS_NOTARY_TEAM_ID }}
+          MACOS_NOTARY_PASSWORD: ${{ secrets.MACOS_NOTARY_PASSWORD }}
+        run: |
+          ZIP="${{ github.workspace }}/OpenApoc-macOS-${{ matrix.artifact_suffix }}.zip"
+          APP="${{ github.workspace }}/build/${{ matrix.preset }}/bin/OpenApoc.app"
+          xcrun notarytool submit "$ZIP" \
+            --apple-id "$MACOS_NOTARY_APPLE_ID" \
+            --team-id "$MACOS_NOTARY_TEAM_ID" \
+            --password "$MACOS_NOTARY_PASSWORD" \
+            --wait
+          xcrun stapler staple "$APP"
+          xcrun stapler validate "$APP"
+          rm "$ZIP"
+          cd "${{ github.workspace }}/build/${{ matrix.preset }}/bin"
+          ditto -c -k --keepParent OpenApoc.app "$ZIP"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -136,6 +193,13 @@ jobs:
           | Intel Mac | \`OpenApoc-macOS-intel.zip\` |
 
           > **Not sure?** Click the Apple menu → **About This Mac**. If it says \"Apple M…\" you have Apple Silicon. If it says \"Intel Core\" you have an Intel Mac.
+
+          ## Signing status
+
+          Release artifacts are signed and notarized when the repository's Apple
+          Developer ID secrets are configured. If macOS reports an unidentified
+          developer warning, right-click \`OpenApoc.app\` → **Open** once or see
+          SUPPORT.md for the quarantine workaround.
 
           ## First-time setup (3 steps)
 

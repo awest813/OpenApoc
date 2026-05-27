@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: macOS support guide
+    url: https://github.com/awest813/OpenApoc/blob/master/SUPPORT.md
+    about: Check the Apple Silicon and Intel support matrix, troubleshooting, and Gatekeeper notes.
+  - name: Apple Silicon + Intel fork policy
+    url: https://github.com/awest813/OpenApoc/blob/master/APPLE_SILICON_INTEL_FORK.md
+    about: Review the macOS-first support contract, CI policy, QA matrix, and Intel deprecation plan.

@@ -28,6 +28,11 @@ bash tools/macos-diag.sh
 
 </details>
 
+## Architecture label
+
+- [ ] Apple Silicon (`arch:arm64`)
+- [ ] Intel (`arch:x86_64`)
+
 ---
 
 ## What happened?

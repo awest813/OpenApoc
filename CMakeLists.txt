@@ -132,6 +132,9 @@ endif()
 
 if (APPLE)
 set(MACOSX_BUNDLE_BUNDLE_NAME OpenApoc)
+set(MACOSX_BUNDLE_GUI_IDENTIFIER "com.openapoc.openapoc")
+set(MACOSX_BUNDLE_COPYRIGHT "OpenApoc contributors. Licensed under GPLv3.")
+set(MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/cmake/Info.plist.in")
 
 ADD_EXECUTABLE(${CMAKE_PROJECT_NAME} MACOSX_BUNDLE game/main.cpp ${sources}
 		${FRAMEWORK_SOURCES})
@@ -271,6 +274,12 @@ string(REPLACE "heads/" "branch/" OPENAPOC_VERSION_STRING_RAW ${OPENAPOC_VERSION
 string(MAKE_C_IDENTIFIER "${OPENAPOC_VERSION_STRING_RAW}" OPENAPOC_VERSION_STRING )
 
 configure_file(version.h.in version.h)
+
+# Set bundle version properties now that OPENAPOC_VERSION_STRING is available.
+if (APPLE)
+	set(MACOSX_BUNDLE_BUNDLE_VERSION "${OPENAPOC_VERSION_STRING}")
+	set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${OPENAPOC_VERSION_STRING}")
+endif()
 
 list(APPEND CLANG_TIDY_OPTIONS
 		-export-fixes=${CLANG_TIDY_FIXES_FILE})

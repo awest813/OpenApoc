@@ -17,6 +17,8 @@ jobs:
     name: Manual Linux compatibility build
     runs-on: ubuntu-24.04
     continue-on-error: true
+    permissions:
+      contents: read
 
     steps:
     - uses: actions/checkout@v4

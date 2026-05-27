@@ -92,11 +92,11 @@ cycle and announce the change in release notes.
 The repository ships [`CMakePresets.json`](CMakePresets.json) with three macOS
 presets:
 
-| Preset | Use |
-|---|---|
-| `macos-arm64` | Apple Silicon dev build (RelWithDebInfo) |
-| `macos-x86_64` | Intel dev build (RelWithDebInfo) |
-| `macos-universal` | Release-optimised universal binary (arm64 + x86_64) |
+| Preset | Use | Deployment target |
+|---|---|---|
+| `macos-arm64` | Apple Silicon dev build (RelWithDebInfo) | macOS 14.0 |
+| `macos-x86_64` | Intel dev build (RelWithDebInfo) | macOS 13.0 |
+| `macos-universal` | Release-optimised universal binary (arm64 + x86_64) | macOS 13.0 |
 
 ```sh
 cmake --preset macos-arm64 && cmake --build --preset macos-arm64
@@ -212,6 +212,8 @@ Once notarized, users can launch the app without any quarantine workaround.
 - [x] macOS-specific GitHub issue template with diagnostics prompt
 - [x] macOS CI badge in README
 - [x] Code signing and notarization documentation (this file)
+- [x] Proper `Info.plist` — bundle ID, Retina (`NSHighResolutionCapable`), min OS, app category
+- [x] `CMAKE_OSX_DEPLOYMENT_TARGET` set per-preset (arm64: 14.0, x86\_64/universal: 13.0)
 - [ ] Resolve any remaining Clang/AppleClang compiler warnings
 - [ ] Confirm test suite passes on both architectures
 

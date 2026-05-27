@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+    "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Identity -->
+    <key>CFBundleExecutable</key>
+    <string>@MACOSX_BUNDLE_EXECUTABLE_NAME@</string>
+
+    <key>CFBundleIdentifier</key>
+    <string>@MACOSX_BUNDLE_GUI_IDENTIFIER@</string>
+
+    <key>CFBundleName</key>
+    <string>@MACOSX_BUNDLE_BUNDLE_NAME@</string>
+
+    <key>CFBundleDisplayName</key>
+    <string>@MACOSX_BUNDLE_BUNDLE_NAME@</string>
+
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+
+    <key>CFBundleSignature</key>
+    <string>????</string>
+
+    <!-- Versioning -->
+    <key>CFBundleVersion</key>
+    <string>@MACOSX_BUNDLE_BUNDLE_VERSION@</string>
+
+    <key>CFBundleShortVersionString</key>
+    <string>@MACOSX_BUNDLE_SHORT_VERSION_STRING@</string>
+
+    <!-- Minimum macOS requirement -->
+    <key>LSMinimumSystemVersion</key>
+    <string>@CMAKE_OSX_DEPLOYMENT_TARGET@</string>
+
+    <!-- Retina / high-resolution display support -->
+    <key>NSHighResolutionCapable</key>
+    <true/>
+
+    <!-- Hide the app from the dock while running fullscreen (optional SDL2 hint) -->
+    <key>LSUIElement</key>
+    <false/>
+
+    <!-- App Store category -->
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.games</string>
+
+    <!-- Copyright -->
+    <key>NSHumanReadableCopyright</key>
+    <string>@MACOSX_BUNDLE_COPYRIGHT@</string>
+
+    <!-- Principal class (required for Cocoa apps) -->
+    <key>NSPrincipalClass</key>
+    <string>NSApplication</string>
+</dict>
+</plist>

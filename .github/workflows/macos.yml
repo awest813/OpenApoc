@@ -92,6 +92,32 @@ jobs:
           fi
           echo "Startup probe OK (exit code $EXIT_CODE)"
 
+      - name: Failure diagnostics
+        if: failure()
+        run: |
+          bash tools/macos-diag.sh ${{ matrix.expected_arch }} || true
+          for log in \
+            "${GITHUB_WORKSPACE}/build/${{ matrix.preset }}/CMakeFiles/CMakeOutput.log" \
+            "${GITHUB_WORKSPACE}/build/${{ matrix.preset }}/CMakeFiles/CMakeError.log"
+          do
+            if [ -f "$log" ]; then
+              echo "::group::$(basename "$log")"
+              tail -n 200 "$log" || true
+              echo "::endgroup::"
+            fi
+          done
+
+      - name: Upload diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenApoc-macOS-${{ matrix.artifact_suffix }}-diagnostics
+          path: |
+            ${{ github.workspace }}/build/${{ matrix.preset }}/CMakeFiles/CMakeOutput.log
+            ${{ github.workspace }}/build/${{ matrix.preset }}/CMakeFiles/CMakeError.log
+            /tmp/openapoc-help.txt
+          if-no-files-found: ignore
+
       # Upload the app bundle so the artifact can be downloaded and run
       # directly — matching the "download artifact and run" user path.
       - name: Upload app bundle

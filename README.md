@@ -3,6 +3,7 @@
 > OpenApoc is an open-source re-implementation of the original [X-COM: Apocalypse](https://www.ufopaedia.org/index.php/Apocalypse), that requires the original files to run, licensed under the GPL3 and written in C++ / SDL2. It was originally founded by PmProg in July 2014, and has since grown a significant [community](https://www.ufopaedia.org/index.php/Credits_(OpenApoc)).
 
 [![Windows Build Status](https://img.shields.io/appveyor/build/OpenApoc/openapoc?branch=master&label=AppVeyor%20Windows&logo=appveyor&logoColor=ffffff&labelColor=282828)](https://ci.appveyor.com/project/openapoc/openapoc/branch/master)
+[![macOS CI](https://github.com/awest813/OpenApoc/actions/workflows/macos.yml/badge.svg)](https://github.com/awest813/OpenApoc/actions/workflows/macos.yml)
 [![Openapoc issues](https://img.shields.io/github/issues-raw/OpenApoc/OpenApoc?color=1182c3&logo=GitHub&labelColor=282828)](https://github.com/openapoc/openapoc/issues)
 [![Translate OpenApoc](https://img.shields.io/badge/Translate-Openapoc-blue.svg)](https://www.transifex.com/x-com-apocalypse/apocalypse/)
 [![OpenApoc GPL3 license](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://github.com/OpenApoc/OpenApoc/blob/master/LICENSE)
@@ -410,17 +411,12 @@ bash tools/macos-setup.sh x86_64   # Intel
 If none of the above resolves your issue, please reach out **before** filing a bug — many issues are environment-specific and are resolved quickly in chat.
 
 1. **Join Discord:** <https://discord.gg/f8Rayre> — most active support channel.
-2. **Post your details** — copy-paste the following and share it in `#mac-support` (or `#general` if there is no mac channel):
+2. **Collect diagnostics** — run the diagnostics script and paste its output into Discord or a bug report:
    ```sh
-   uname -m                          # architecture
-   sw_vers                           # macOS version
-   xcode-select -p                   # compiler toolchain path
-   brew --version                    # Homebrew version
-   cmake --version                   # CMake version
-   otool -L build/macos-arm64/bin/OpenApoc.app/Contents/MacOS/OpenApoc 2>/dev/null || \
-   otool -L build/macos-x86_64/bin/OpenApoc.app/Contents/MacOS/OpenApoc
+   bash tools/macos-diag.sh
    ```
-3. **File a bug** if the issue is reproducible and not environment-specific: <https://github.com/awest813/OpenApoc/issues> — include the output from step 2.
+   This captures your architecture, macOS version, toolchain, Homebrew packages, and library links in one step.
+3. **File a bug** if the issue is reproducible and not environment-specific: use the [macOS bug report template](https://github.com/awest813/OpenApoc/issues/new?template=bug-report-macos.md) — paste the diagnostics output in the form.
 
 
 ## OpenApoc Coding Style
@@ -459,7 +455,9 @@ Simple steps to play OpenApoc on Windows right now
 
 4) Run and enjoy!
 
-Linux and macOS users: After compiling (see [Building on Linux](#building-on-linux) or [Building on macOS](#building-on-macos) above), copy `cd.iso` into the `data/` directory and run the executable from the repository root.
+**Linux users:** After compiling (see [Building on Linux](#building-on-linux) above), copy `cd.iso` into the `data/` directory and run the executable from the repository root.
+
+**macOS users:** Pre-built app bundles are available on the [Releases page](https://github.com/awest813/OpenApoc/releases) — download the zip for your Mac, unzip, right-click → Open to bypass Gatekeeper, then place `cd.iso` next to `OpenApoc.app`. To build from source instead, see [Building on macOS](#building-on-macos) above.
 
 
 ## Contact us

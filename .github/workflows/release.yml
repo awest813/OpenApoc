@@ -80,6 +80,21 @@ jobs:
           path: ${{ github.workspace }}/OpenApoc-macOS-${{ matrix.artifact_suffix }}.zip
           if-no-files-found: error
 
+      # Generate a SHA-256 checksum so users can verify integrity after download.
+      - name: Generate checksum
+        run: |
+          shasum -a 256 \
+            "${{ github.workspace }}/OpenApoc-macOS-${{ matrix.artifact_suffix }}.zip" \
+            > "${{ github.workspace }}/OpenApoc-macOS-${{ matrix.artifact_suffix }}.zip.sha256"
+          cat "${{ github.workspace }}/OpenApoc-macOS-${{ matrix.artifact_suffix }}.zip.sha256"
+
+      - name: Upload checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenApoc-macOS-${{ matrix.artifact_suffix }}-sha256
+          path: ${{ github.workspace }}/OpenApoc-macOS-${{ matrix.artifact_suffix }}.zip.sha256
+          if-no-files-found: error
+
   # -----------------------------------------------------------------------
   # Create the GitHub Release and attach both zip archives
   # -----------------------------------------------------------------------
@@ -99,6 +114,13 @@ jobs:
           path: release-assets
           merge-multiple: true
 
+      # Combine per-arch checksums into one file for easy verification.
+      - name: Combine checksums
+        run: |
+          cat release-assets/*.sha256 > release-assets/checksums-sha256.txt
+          echo "=== SHA-256 checksums ==="
+          cat release-assets/checksums-sha256.txt
+
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -106,21 +128,38 @@ jobs:
           TAG="${{ github.ref_name }}"
           gh release create "$TAG" \
             --title "OpenApoc $TAG" \
-            --notes "## macOS Downloads
+            --notes "## Which download do I need?
 
-          | File | For |
+          | I have… | Download |
           |---|---|
-          | \`OpenApoc-macOS-apple-silicon.zip\` | **Apple Silicon** Macs — M1, M2, M3, M4 |
-          | \`OpenApoc-macOS-intel.zip\` | **Intel** Macs |
+          | Apple Silicon Mac (M1 / M2 / M3 / M4) | \`OpenApoc-macOS-apple-silicon.zip\` |
+          | Intel Mac | \`OpenApoc-macOS-intel.zip\` |
 
-          ### First-time setup
-          1. Download the zip for your Mac.
-          2. Unzip and move \`OpenApoc.app\` anywhere you like.
-          3. **Right-click → Open** the first time (Gatekeeper will warn about an unsigned app — click *Open* to proceed).
-          4. Copy your X-Com: Apocalypse \`cd.iso\` (Steam or GOG) into the same folder as \`OpenApoc.app\`.
-          5. Double-click \`OpenApoc.app\` to play.
+          > **Not sure?** Click the Apple menu → **About This Mac**. If it says \"Apple M…\" you have Apple Silicon. If it says \"Intel Core\" you have an Intel Mac.
+
+          ## First-time setup (3 steps)
+
+          1. **Download** the zip for your Mac from the list above.
+          2. **Unzip** and move \`OpenApoc.app\` anywhere you like.
+          3. **Right-click → Open** the first time — Gatekeeper will warn about an unsigned app; click *Open* to proceed.
+
+          Then place your game data file next to \`OpenApoc.app\`:
+
+          - **Steam:** copy \`cd.iso\` from the X-COM: Apocalypse install folder.
+          - **GOG:** copy \`xcom.cue\` and \`xcom.bin\`, then rename \`xcom.cue\` to \`cd.iso\`.
+
+          Double-click \`OpenApoc.app\` to play.
 
           > **Game data required.** OpenApoc does not include game assets. You must own a copy of X-COM: Apocalypse (Steam or GOG).
 
-          See [SUPPORT.md](https://github.com/${{ github.repository }}/blob/master/SUPPORT.md) for the full platform support matrix and known limitations." \
-            release-assets/*.zip
+          ## Verify download integrity
+
+          \`\`\`sh
+          # Download checksums-sha256.txt from this release, then:
+          shasum -a 256 -c checksums-sha256.txt
+          \`\`\`
+
+          ## Troubleshooting
+
+          See [SUPPORT.md](https://github.com/${{ github.repository }}/blob/master/SUPPORT.md) for the full platform support matrix, Gatekeeper workarounds, and known limitations." \
+            release-assets/*.zip release-assets/checksums-sha256.txt

@@ -33,6 +33,24 @@ success() { printf '\033[1;32m[setup]\033[0m %s\n' "$*"; }
 warn()    { printf '\033[1;33m[setup]\033[0m %s\n' "$*" >&2; }
 die()     { printf '\033[1;31m[setup]\033[0m ERROR: %s\n' "$*" >&2; exit 1; }
 
+LAST_STEP="initialization"
+CURRENT_LOG=""
+
+report_failure()
+{
+    local exit_code=$?
+    warn "Step '$LAST_STEP' failed (exit code $exit_code)."
+    if [[ -n "$CURRENT_LOG" && -f "$CURRENT_LOG" ]]; then
+        warn "Recent log output from $CURRENT_LOG:"
+        tail -n 40 "$CURRENT_LOG" >&2 || true
+        warn "Full log saved at: $CURRENT_LOG"
+    fi
+    warn "For environment diagnostics run: bash \"${SCRIPT_DIR:-$PWD/tools}/macos-diag.sh\" \"${ARCH:-$(uname -m)}\""
+    exit "$exit_code"
+}
+
+trap report_failure ERR
+
 # ---------------------------------------------------------------------------
 # Locate the repo root (script may be invoked from any directory)
 # ---------------------------------------------------------------------------
@@ -60,6 +78,22 @@ info "CMake preset        : $CMAKE_PRESET"
 if [[ "$ARCH" != "$HOST_ARCH" ]]; then
     warn "Cross-compiling for $ARCH on a $HOST_ARCH host — libraries must match the target arch."
 fi
+
+LOG_DIR="$REPO_ROOT/build/$CMAKE_PRESET/logs"
+mkdir -p "$LOG_DIR"
+
+run_with_log()
+{
+    local step_name="$1"
+    local log_file="$2"
+    shift 2
+    LAST_STEP="$step_name"
+    CURRENT_LOG="$log_file"
+    info "$step_name …"
+    "$@" > >(tee "$log_file") 2>&1
+    CURRENT_LOG=""
+    success "$step_name OK"
+}
 
 # ---------------------------------------------------------------------------
 # Homebrew prefix (differs between Apple Silicon and Intel)
@@ -108,7 +142,9 @@ success "Homebrew found at $BREW"
 DEPS=(cmake ninja boost sdl2 libvorbis pkg-config)
 
 info "Installing / verifying Homebrew dependencies: ${DEPS[*]}"
-"$BREW" install "${DEPS[@]}"
+run_with_log "Installing / verifying Homebrew dependencies" \
+    "$LOG_DIR/brew-install.log" \
+    "$BREW" install "${DEPS[@]}"
 
 # Qt is optional (only needed for the launcher)
 if [[ "${OPENAPOC_BUILD_LAUNCHER:-0}" == "1" ]]; then
@@ -123,8 +159,9 @@ success "Homebrew dependencies OK"
 # ---------------------------------------------------------------------------
 info "Updating git submodules …"
 cd "$REPO_ROOT"
-git submodule update --init --recursive
-success "Submodules OK"
+run_with_log "Updating git submodules" \
+    "$LOG_DIR/submodule-update.log" \
+    git submodule update --init --recursive
 
 # ---------------------------------------------------------------------------
 # 5. cd.iso reminder (non-blocking)
@@ -140,10 +177,14 @@ fi
 # 6. CMake configure + build
 # ---------------------------------------------------------------------------
 info "Configuring with preset '$CMAKE_PRESET' …"
-cmake --preset "$CMAKE_PRESET" -S "$REPO_ROOT"
+run_with_log "Configuring with preset '$CMAKE_PRESET'" \
+    "$LOG_DIR/cmake-configure.log" \
+    cmake --preset "$CMAKE_PRESET" -S "$REPO_ROOT"
 
 info "Building …"
-cmake --build --preset "$CMAKE_PRESET" --parallel
+run_with_log "Building with preset '$CMAKE_PRESET'" \
+    "$LOG_DIR/cmake-build.log" \
+    cmake --build --preset "$CMAKE_PRESET" --parallel
 
 # ---------------------------------------------------------------------------
 # 7. Post-build verification

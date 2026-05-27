@@ -375,6 +375,9 @@ Fix:
 ```
 
 > Apple Silicon: Homebrew installs to `/opt/homebrew`.  Intel: `/usr/local`.
+> If `tools/macos-setup.sh` fails, inspect step logs in
+> `build/macos-<arch>/logs/` and include `bash tools/macos-diag.sh` output when
+> reporting the issue.
 
 ---
 

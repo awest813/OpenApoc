@@ -23,7 +23,7 @@ instructions including manual CMake preset usage and troubleshooting.
 | Tier | Platform | Architecture | macOS versions | Status |
 |---|---|---|---|---|
 | Tier 1 | Apple Silicon | ARM64 (arm64) | 14 Sonoma, 15 Sequoia | **Primary** — CI-tested on every push |
-| Tier 2 | Intel Mac | x86\_64 | 13 Ventura | **Secondary** — CI-tested on every push while runners are available, best-effort |
+| Tier 2 | Intel Mac | x86\_64 | 13 Ventura+ | **Secondary** — CI-tested on every push while runners are available, best-effort |
 | Out of scope | Windows / Linux | n/a | n/a | Upstream compatibility only |
 
 ### Primary (Apple Silicon)
@@ -34,7 +34,7 @@ instructions including manual CMake preset usage and troubleshooting.
 
 ### Secondary (Intel)
 
-* CI runs on `macos-13` (last GitHub-hosted Intel runner).
+* CI runs on `macos-15-intel` (current GitHub-hosted Intel runner).
 * Regressions are addressed on a best-effort basis and are not blocking for
   releases.
 * Intel support may be dropped in a future release as Apple's transition to
@@ -64,7 +64,7 @@ Intel-only, low-impact, or caused by hosted runner retirement.
 
 Intel release artifacts should be reassessed if any of the following occur:
 
-1. GitHub-hosted `macos-13` Intel runners are retired.
+1. GitHub-hosted Intel runners are retired.
 2. No trusted self-hosted Intel runner is available.
 3. Intel-only defects require invasive changes that risk Apple Silicon stability.
 4. Intel usage and issue volume no longer justify release maintenance.

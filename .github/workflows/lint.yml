@@ -1,8 +1,7 @@
 name: Upstream Compatibility Lint
 
-# Manual, non-blocking lint workflow retained for upstream compatibility checks.
-# The macOS workflow is the required gate for this fork.
 on:
+  pull_request:
   workflow_dispatch:
 
 concurrency:
@@ -16,9 +15,8 @@ env:
 
 jobs:
   lint:
-    name: Manual Linux lint compatibility
+    name: Linux lint compatibility
     runs-on: ubuntu-latest
-    continue-on-error: true
     permissions:
       contents: read
 
@@ -64,4 +62,4 @@ jobs:
       shell: bash
       run: |
         cd $GITHUB_WORKSPACE
-        BUILD_DIR=${{ runner.workspace }}/build $GITHUB_WORKSPACE/tools/lint-tidy.sh HEAD || true
+        BUILD_DIR=${{ runner.workspace }}/build $GITHUB_WORKSPACE/tools/lint-tidy.sh HEAD

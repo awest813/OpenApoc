@@ -10,7 +10,7 @@ for this fork.
 | Tier | Platform | Architecture | Target macOS | Release policy |
 |---|---|---|---|---|
 | Tier 1 | Apple Silicon Macs | arm64 | macOS 14 Sonoma and newer | Blocking for merges and releases |
-| Tier 2 | Intel Macs | x86_64 | macOS 13 Ventura | Best-effort, non-blocking |
+| Tier 2 | Intel Macs | x86_64 | macOS 13 Ventura+ | Best-effort, non-blocking |
 | Out of scope | Windows / Linux | n/a | n/a | Track upstream; not release-blocking here |
 
 Apple Silicon regressions block releases. Intel regressions are fixed when they
@@ -39,7 +39,7 @@ The `macOS` GitHub Actions workflow is the primary required CI gate. It builds,
 tests, smoke-tests, and uploads per-architecture app bundle artifacts for:
 
 - Apple Silicon on `macos-15`.
-- Intel on `macos-13`.
+- Intel on `macos-15-intel`.
 
 Legacy Linux workflows are kept as manual, non-blocking upstream compatibility
 checks only. AppVeyor Windows configuration is retired from this fork's active

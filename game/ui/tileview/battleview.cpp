@@ -2832,14 +2832,12 @@ void BattleView::orderTeleport(Vec3<int> target, bool right)
 	auto item = unit->agent->getFirstItemInSlot(right ? EquipmentSlotType::RightHand
 	                                                  : EquipmentSlotType::LeftHand);
 
-	// FIXME: REMOVE TEMPORARY CHEAT
 	if (!item || item->type->type != AEquipmentType::Type::Teleporter)
 	{
-		LogWarning("Using teleporter cheat!");
-		item = mksp<AEquipment>();
-		UString tp = "AEQUIPMENTTYPE_PERSONAL_TELEPORTER";
-		item->type = {&*state, tp};
-		item->ammo = item->type->max_ammo;
+		actionImpossibleDelay = 40;
+		LogWarning("BattleUnit \"{0}\" has no teleporter in {1} hand ", unit->agent->name,
+		           right ? "right" : "left");
+		return;
 	}
 
 	if (!item)

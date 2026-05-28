@@ -36,7 +36,7 @@ jobs:
             preset: macos-arm64
             artifact_suffix: apple-silicon
           - name: "Intel (x86_64)"
-            os: macos-13
+            os: macos-15-intel
             preset: macos-x86_64
             artifact_suffix: intel
 

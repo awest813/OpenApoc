@@ -1,27 +1,30 @@
 {
   "name": "openapoc",
   "version-string": "0.1.0-dev",
+  "builtin-baseline": "15cd15b0da3c48a0c7720e4c87e0b6030334feed",
   "dependencies": [
     {
       "name": "sdl2",
+      "version>=": "2.30.0",
       "default-features": false,
       "features": [
         { "name": "x11",     "platform": "linux" },
         { "name": "wayland", "platform": "linux" }
       ]
     },
-    "boost-locale",
-    "boost-program-options",
-    "boost-uuid",
-    "boost-crc",
-    "libvorbis"
+    { "name": "boost-locale", "version>=": "1.85.0" },
+    { "name": "boost-program-options", "version>=": "1.85.0" },
+    { "name": "boost-uuid", "version>=": "1.85.0" },
+    { "name": "boost-crc", "version>=": "1.85.0" },
+    { "name": "libvorbis", "version>=": "1.3.7" }
   ],
   "features": {
     "launcher": {
       "description": "Build Launcher",
       "dependencies": [
         {
-          "name": "qtbase"
+          "name": "qtbase",
+          "version>=": "6.7.2"
         }
       ]
     }

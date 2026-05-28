@@ -97,7 +97,7 @@ This fork is maintained for macOS first:
 | Tier | Platform | Status | CI / release expectation |
 |---|---|---|---|
 | Tier 1 | Apple Silicon (arm64, macOS 14+) | Primary | Required for merges and releases |
-| Tier 2 | Intel Mac (x86_64, macOS 13) | Best-effort | Built while GitHub-hosted Intel runners remain available |
+| Tier 2 | Intel Mac (x86_64, macOS 13+) | Best-effort | Built while GitHub-hosted Intel runners remain available |
 | Out of scope | Windows / Linux | Upstream compatibility only | Not release-blocking for this fork |
 
 Use the macOS presets and helper scripts described below. The complete fork
@@ -226,7 +226,7 @@ make -j4
 | Architecture | macOS versions tested | Support level |
 |---|---|---|
 | Apple Silicon (arm64) | 14 Sonoma, 15 Sequoia | **Primary** — CI-tested on every push |
-| Intel (x86\_64) | 13 Ventura | **Secondary** — CI-tested, best-effort |
+| Intel (x86\_64) | 13 Ventura+ | **Secondary** — CI-tested, best-effort |
 
 #### Pre-built downloads (no compilation required)
 

@@ -214,8 +214,8 @@ Once notarized, users can launch the app without any quarantine workaround.
 - [x] Code signing and notarization documentation (this file)
 - [x] Proper `Info.plist` — bundle ID, Retina (`NSHighResolutionCapable`), min OS, app category
 - [x] `CMAKE_OSX_DEPLOYMENT_TARGET` set per-preset (arm64: 14.0, x86\_64/universal: 13.0)
-- [ ] Resolve any remaining Clang/AppleClang compiler warnings
-- [ ] Confirm test suite passes on both architectures
+- [x] Resolve any remaining Clang/AppleClang compiler warnings
+- [x] Confirm test suite passes on both architectures
 
 ### Mid-term — "Stable release"
 - [ ] Signed and notarized release builds

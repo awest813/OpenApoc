@@ -17,6 +17,9 @@ on:
     tags:
       - 'v*'
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   # -----------------------------------------------------------------------
   # Build one app bundle per architecture

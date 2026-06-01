@@ -27,7 +27,9 @@
 #include <vector>
 
 #ifdef __APPLE__
-// Used for NASTY chdir() app bundle hacks
+// chdir() used to relocate working directory when launched from Finder
+#include <cerrno>
+#include <cstring>
 #include <unistd.h>
 #endif
 
@@ -123,21 +125,44 @@ Framework::Framework(const UString programName, bool createWindow)
 
 #ifdef __APPLE__
 	{
-		// FIXME: A hack to set the working directory to the Resources directory in the app bundle.
-		char *basePath = SDL_GetBasePath();
-		// FIXME: How to check we're being run from the app bundle and not directly from the
-		// terminal? On my testing (macos 10.15.1 19B88) it seems to have a "/" working directory,
-		// which is unlikely in terminal use, so use that?
+		// When the app is launched by double-clicking the bundle from Finder,
+		// macOS sets the working directory to "/" which prevents the game from
+		// finding its data files relative to the executable.  Detect this case
+		// and change to the folder that *contains* the .app bundle — the same
+		// place users are expected to put their data/ folder after unzipping a
+		// release archive.  When launched via tools/macos-run.sh the working
+		// directory is already correct, so we leave it alone.
 		if (fs::current_path() == "/")
 		{
-			LogWarning("Setting working directory to \"{0}\"", basePath);
-			chdir(basePath);
+			// SDL_GetBasePath() returns …/OpenApoc.app/Contents/MacOS/
+			// Three parent_path() calls navigate to the folder holding the bundle.
+			char *base = SDL_GetBasePath();
+			if (base)
+			{
+				fs::path bundleParent = fs::path(base).parent_path()  // Contents/
+				                                      .parent_path()  // OpenApoc.app/
+				                                      .parent_path(); // containing dir
+				if (chdir(bundleParent.c_str()) == 0)
+				{
+					LogInfo("Set working directory to \"{0}\" (bundle parent)",
+					        bundleParent.string());
+				}
+				else
+				{
+					LogWarning("Failed to set working directory to \"{0}\": {1}",
+					           bundleParent.string(), std::strerror(errno));
+				}
+				SDL_free(base);
+			}
+			else
+			{
+				LogWarning("SDL_GetBasePath() returned null; working directory remains \"/\"");
+			}
 		}
 		else
 		{
-			LogWarning("Leaving default working directory \"{0}\"", fs::current_path().string());
+			LogInfo("Working directory: \"{0}\"", fs::current_path().string());
 		}
-		SDL_free(basePath);
 	}
 #endif
 
